@@ -1,6 +1,7 @@
 import App from "client/App";
-import { FastifyPluginCallback } from "fastify";
+import fastify from "fastify";
 import fastifyStatic from "fastify-static";
+import type { IncomingMessage, ServerResponse } from "http";
 import { renderToString } from "react-dom/server";
 import { StaticRouter } from "react-router-dom";
 
@@ -15,8 +16,9 @@ const cssLinksFromAssets = (assets: GenericObject, entryPoint: string) =>
 const jsScriptTagsFromAssets = (assets: GenericObject, entryPoint: string, extra = "") =>
   (assets && assets[entryPoint]?.js.map((asset: string) => `<script src="${asset}"${extra}></script>`).join("")) || "";
 
-const server: FastifyPluginCallback = (fastify, _options, done) => {
-  fastify.register(fastifyStatic, { root: process.env.RAZZLE_PUBLIC_DIR!, prefix: "/public" }).get("/*", async (req, res) => {
+const app = fastify({ logger: true })
+  .register(fastifyStatic, { root: process.env.RAZZLE_PUBLIC_DIR!, prefix: "/public" })
+  .get("/*", async (req, res) => {
     const context: { url?: string } = {};
     const markup = renderToString(
       <StaticRouter context={context} location={req.url}>
@@ -50,9 +52,9 @@ const server: FastifyPluginCallback = (fastify, _options, done) => {
       );
   });
 
-  done();
-};
-
 // server.test = "TEST";
 
-export default server;
+export default async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+  await app.ready();
+  app.server.emit("request", req, res);
+};

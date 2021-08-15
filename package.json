@@ -1,6 +1,6 @@
 {
   "name": "razzle-fastify-typescript-template",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "scripts": {
     "start": "razzle start",
